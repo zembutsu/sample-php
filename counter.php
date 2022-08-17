@@ -5,7 +5,7 @@ mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
 print "<h1>counter</h1>\n";
 
-$mysqlhost = "host";
+$mysqlhost = "db";
 $mysqluser = "user";
 $mysqlpass = "pass";
 $mysqldata = "database";

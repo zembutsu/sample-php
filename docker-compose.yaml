@@ -1,0 +1,23 @@
+version: '3'
+
+services:
+
+  counter:
+    build: .
+    ports:
+      - 8080:80
+
+  db:
+    image: mysql:5.7
+    environment:
+      MYSQL_DATABASE: database
+      MYSQL_USER: user
+      MYSQL_PASSWORD: pass
+      MYSQL_RANDOM_ROOT_PASSWORD: '1'
+    volumes:
+      - mydb:/var/lib/mysql
+      - ./count.sql:/docker-entrypoint-initdb.d/count.sql:ro
+
+volumes:
+  mydb:
+
