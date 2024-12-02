@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>温湿度データ ビューアー＆送信</title>
+    <meta charset="utf-8">
+    <style>
+        body { padding: 20px; font-family: Arial, sans-serif; }
+        .data-display {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .data-history {
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            padding: 10px;
+        }
+        .history-item {
+            padding: 5px;
+            border-bottom: 1px solid #eee;
+        }
+        button {
+            padding: 8px 15px;
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h2>温湿度データ ビューアー＆送信</h2>
+
+    <div>
+        <label>温度 (°C):</label>
+        <input type="number" id="temperature" value="23.5" step="0.1">
+        <label>湿度 (%):</label>
+        <input type="number" id="humidity" value="45.2" step="0.1">
+    </div>
+
+    <div>
+        <button onclick="startAutoGenerate()">自動生成＆送信開始</button>
+        <button onclick="stopAutoGenerate()">停止</button>
+    </div>
+
+    <div class="data-display">
+        <h3>現在のデータ</h3>
+        <div id="currentData"></div>
+    </div>
+
+    <div class="data-display">
+        <h3>データ履歴（最新10件）</h3>
+        <div id="dataHistory" class="data-history"></div>
+    </div>
+
+    <script>
+        let autoGenerateInterval;
+        const history = [];
+        const MAX_HISTORY = 10;
+
+        function generateData() {
+            const baseTemp = 23;
+            const baseHum = 45;
+            const temp = (baseTemp + (Math.random() * 2 - 1)).toFixed(1);
+            const hum = (baseHum + (Math.random() * 4 - 2)).toFixed(1);
+
+            document.getElementById('temperature').value = temp;
+            document.getElementById('humidity').value = hum;
+
+            updateDisplayAndSend();
+        }
+
+        function updateDisplayAndSend() {
+            const temp = document.getElementById('temperature').value;
+            const hum = document.getElementById('humidity').value;
+
+            const data = {
+                payload: {
+                    temperature: parseFloat(temp),
+                    humidity: parseFloat(hum)
+                }
+            };
+
+            // 現在のデータを表示
+            document.getElementById('currentData').innerHTML =
+                `温度: ${temp}°C<br>
+                 湿度: ${hum}%`;
+
+            // 履歴に追加
+            history.unshift(data);
+            if (history.length > MAX_HISTORY) {
+                history.pop();
+            }
+
+            // 履歴を表示
+            const historyHtml = history.map(item => `
+                <div class="history-item">
+                    温度: ${item.payload.temperature}°C /
+                    湿度: ${item.payload.humidity}%
+                </div>
+            `).join('');
+
+            document.getElementById('dataHistory').innerHTML = historyHtml;
+
+            // Node-REDにデータを送信
+            sendToNodeRed(data);
+        }
+
+        function startAutoGenerate() {
+            if (!autoGenerateInterval) {
+                autoGenerateInterval = setInterval(generateData, 10000);
+                generateData(); // 即座に1回生成
+            }
+        }
+
+        function stopAutoGenerate() {
+            if (autoGenerateInterval) {
+                clearInterval(autoGenerateInterval);
+                autoGenerateInterval = null;
+            }
+        }
+
+        function sendToNodeRed(data) {
+            fetch('http://127.0.0.1/sample-php/data_writer.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .catch(error => {
+                console.error('送信エラー:', error.message);
+            });
+        }
+    </script>
+</body>
+</html>
